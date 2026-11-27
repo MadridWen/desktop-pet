@@ -9,7 +9,10 @@ function createScene(container) {
           <img class="part body" data-part="body" alt="">
         </div>
         <div class="avatar-core avatar-head">
-          <img class="part head" data-part="head" alt="">
+          <div class="head-frame">
+            <img class="part head" data-part="head" alt="">
+            <img class="part eye-blink" src="../assets/eye-blink.png" alt="">
+          </div>
         </div>
         <div class="desk"></div>
         <div class="keyboard"></div>
@@ -31,6 +34,7 @@ function createScene(container) {
 
   const scene = container.firstElementChild;
   const desk = scene.querySelector('.workstation');
+  const mouse = scene.querySelector('.mouse');
   const keys = createDeskKeyboard(scene.querySelector('.keyboard'));
   const clickClasses = ['click-primary', 'click-secondary', 'click-other'];
   const mousePulses = new Map();
@@ -47,14 +51,29 @@ function createScene(container) {
     };
   }
 
-  const leftHand = armAt('.keyboard-arm', 244, 301);
-  const rightHand = armAt('.keyboard-right-arm', 177, 301);
-  const mouseHand = armAt('.mouse-arm', 45, 306);
+  function toDeskPoint(x, y) {
+    const area = desk.getBoundingClientRect();
+    return {
+      x: (x - area.x) * desk.offsetWidth / area.width,
+      y: (y - area.y) * desk.offsetHeight / area.height
+    };
+  }
+
   const leftRest = { x: 254, y: 297 };
   const rightRest = { x: 211, y: 297 };
+  const leftHand = { ...armAt('.keyboard-arm', 244, 301), point: leftRest, rest: leftRest };
+  const rightHand = { ...armAt('.keyboard-right-arm', 177, 301), point: rightRest, rest: rightRest };
+  const typingHands = [leftHand, rightHand];
+  const mouseHand = armAt('.mouse-arm', 45, 306);
+  const mouseBounds = mouse.getBoundingClientRect();
+  const mouseRest = toDeskPoint(mouseBounds.x + mouseBounds.width / 2, mouseBounds.bottom);
+  mouseRest.y -= 14;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-  let keyTimer, idleTimer, travelFrame, activeKey, tap;
+  const keyReachTime = 86;
+  const keyHoldTime = 85;
+  const mouseTravelTime = 250;
+  let keyTimer, idleTimer, poseFrame, activeKey, activeHand, mouseTravel;
   let mouseEngaged = false, mouseProgress = 0, mouseX = 0, mouseY = 0;
   let figureScale = 1, version;
 
@@ -72,66 +91,107 @@ function createScene(container) {
   }
 
   function poseHands() {
-    placeArm(leftHand, leftRest.x + (tap?.arm === leftHand ? tap.dx : 0),
-      leftRest.y + (tap?.arm === leftHand ? 3 : 0));
+    placeArm(leftHand, leftHand.point.x, leftHand.point.y);
 
     // Both right-hand poses share one shoulder and travel along one wrist path.
     const p = mouseProgress;
     const arm = p < .55 ? rightHand : mouseHand;
-    const dx = tap?.arm === rightHand ? tap.dx * (1 - p) : 0;
-    const press = tap?.arm === rightHand ? 3 * (1 - p) : 0;
-    const x = rightRest.x + (mouseHand.x + mouseX - rightRest.x) * p + dx;
-    const y = rightRest.y + (mouseHand.y + mouseY - rightRest.y) * p
-      - Math.sin(Math.PI * p) * 24 + press;
+    const x = rightHand.point.x + (mouseRest.x + mouseX - rightHand.point.x) * p;
+    const y = rightHand.point.y + (mouseRest.y + mouseY - rightHand.point.y) * p
+      - Math.sin(Math.PI * p) * 24;
     placeArm(arm, x, y);
     rightHand.element.classList.toggle('pose-inactive', arm !== rightHand);
     mouseHand.element.classList.toggle('pose-inactive', arm !== mouseHand);
   }
 
+  function easeProgress(motion, now) {
+    const t = Math.min(1, Math.max(0, (now - motion.start) / motion.duration));
+    return t * t * (3 - 2 * t);
+  }
+
+  function requestPoseFrame() {
+    if (poseFrame == null) poseFrame = requestAnimationFrame(advancePose);
+  }
+
+  function advancePose(now) {
+    poseFrame = null;
+    for (const hand of typingHands) {
+      const motion = hand.motion;
+      if (!motion) continue;
+      const p = easeProgress(motion, now);
+      hand.point = {
+        x: motion.from.x + (motion.to.x - motion.from.x) * p,
+        y: motion.from.y + (motion.to.y - motion.from.y) * p - Math.sin(Math.PI * p) * motion.lift
+      };
+      if (p === 1) hand.motion = null;
+    }
+    if (mouseTravel) {
+      const p = easeProgress(mouseTravel, now);
+      mouseProgress = mouseTravel.from + (mouseTravel.to - mouseTravel.from) * p;
+      if (p === 1) mouseTravel = null;
+    }
+    poseHands();
+    if (mouseTravel || typingHands.some(hand => hand.motion)) requestPoseFrame();
+  }
+
+  function moveTypingHand(hand, point, duration) {
+    if (hand.motion?.to.x === point.x && hand.motion?.to.y === point.y) return;
+    const distance = Math.hypot(point.x - hand.point.x, point.y - hand.point.y);
+    if (reducedMotion.matches || distance === 0) {
+      hand.motion = null;
+      hand.point = point;
+      return;
+    }
+    hand.motion = {
+      from: hand.point, to: point, start: performance.now(), duration,
+      lift: Math.min(6, distance * .12)
+    };
+    requestPoseFrame();
+  }
+
   function setMouseEngaged(value) {
     if (mouseEngaged === value) return;
     mouseEngaged = value;
-    cancelAnimationFrame(travelFrame);
     const target = value ? 1 : 0;
-    if (reducedMotion.matches) {
+    if (reducedMotion.matches || mouseProgress === target) {
       mouseProgress = target;
+      mouseTravel = null;
       poseHands();
       return;
     }
-    const from = mouseProgress;
-    const start = performance.now();
-    const duration = 250 * Math.abs(target - from);
-    const step = (now) => {
-      const ratio = Math.min(1, (now - start) / Math.max(duration, 1));
-      const ease = ratio * ratio * (3 - 2 * ratio);
-      mouseProgress = from + (target - from) * ease;
-      poseHands();
-      if (ratio < 1) travelFrame = requestAnimationFrame(step);
+    mouseTravel = {
+      from: mouseProgress, to: target, start: performance.now(),
+      duration: mouseTravelTime * Math.abs(target - mouseProgress)
     };
-    travelFrame = requestAnimationFrame(step);
+    requestPoseFrame();
   }
 
   function clearKey() {
     clearTimeout(keyTimer);
     activeKey?.classList.remove('is-pressed');
     activeKey = null;
-    tap = null;
+    activeHand = null;
   }
 
   function lightKey(key) {
+    const previousHand = activeHand;
     clearKey();
     activeKey = key;
     key.classList.add('is-pressed');
-    const area = desk.getBoundingClientRect();
     const bounds = key.getBoundingClientRect();
-    const x = (bounds.x + bounds.width / 2 - area.x) * desk.offsetWidth / area.width;
-    const arm = mouseEngaged || x >= (leftRest.x + rightRest.x) / 2 ? leftHand : rightHand;
-    const rest = arm === leftHand ? leftRest : rightRest;
-    tap = { arm, dx: Math.max(-8, Math.min(8, (x - rest.x) * .45)) };
+    const point = toDeskPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    activeHand = mouseEngaged || point.x >= (leftRest.x + rightRest.x) / 2 ? leftHand : rightHand;
+    if (previousHand && previousHand !== activeHand) moveTypingHand(previousHand, previousHand.rest, 125);
+    const hand = activeHand;
+    moveTypingHand(hand, point, keyReachTime);
+
+    // Leave the key lit while the right hand is returning from the mouse.
+    const reachTime = hand === rightHand ? Math.max(keyReachTime, mouseProgress * mouseTravelTime) : keyReachTime;
     keyTimer = setTimeout(() => {
       clearKey();
+      moveTypingHand(hand, hand.rest, 125);
       poseHands();
-    }, 115);
+    }, reachTime + keyHoldTime);
   }
 
   function pulseMouse(className, duration) {
@@ -174,7 +234,12 @@ function createScene(container) {
   function reset() {
     clearKey();
     clearTimeout(idleTimer);
-    cancelAnimationFrame(travelFrame);
+    cancelAnimationFrame(poseFrame);
+    poseFrame = mouseTravel = null;
+    for (const hand of typingHands) {
+      hand.motion = null;
+      hand.point = hand.rest;
+    }
     mouseEngaged = false;
     mouseProgress = mouseX = mouseY = 0;
     for (const [name, timeout] of mousePulses) {

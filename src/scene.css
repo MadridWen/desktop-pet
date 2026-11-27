@@ -26,7 +26,7 @@
 }
 .avatar-head { z-index: 5; }
 .part { position: absolute; object-fit: contain; -webkit-user-drag: none; }
-/* The four default cutouts share a pose. Their boxes keep the joints aligned. */
+/* The cutout boxes keep the joints aligned. */
 .body {
   left: 104px;
   top: 155px;
@@ -34,18 +34,23 @@
   height: 138px;
   object-position: center 50%;
 }
-.head {
+.head-frame {
+  position: absolute;
   left: 72px;
   top: 4px;
   width: 200px;
   height: 224px;
-  object-position: center 79%;
   transform-origin: 50% 74%;
   animation: look 4.6s ease-in-out infinite;
 }
-.head.custom {
-  height: 172px;
-  object-position: center bottom;
+.head-frame .part { inset: 0; width: 100%; height: 100%; }
+.head { object-position: center 79%; }
+.head.custom { object-position: center bottom; }
+.head-frame:has(.head.custom) { height: 172px; }
+.head-frame:has(.head.custom) .eye-blink { display: none; }
+.eye-blink {
+  opacity: 0;
+  animation: blink 18s linear infinite;
 }
 .desk-shadow {
   position: absolute;
@@ -151,7 +156,6 @@
   width: 70px;
   height: 126px;
   transform-origin: 22px 8px;
-  transition: transform .08s ease-out;
 }
 .keyboard-right-arm {
   left: 104px;
@@ -164,9 +168,9 @@
 .mouse-track {
   z-index: 3;
   position: absolute;
-  left: 17px;
+  left: 8px;
   top: 260px;
-  width: 70px;
+  width: 61px;
   height: 62px;
   border: 1px solid #6d4a61;
   border-radius: 11px;
@@ -175,7 +179,7 @@
 .mouse {
   z-index: 4;
   position: absolute;
-  left: 24px;
+  left: 18px;
   top: 268px;
   width: 42px;
   height: 50px;
@@ -229,7 +233,11 @@
   0%, 100% { transform: translate(var(--look-x), var(--look-y)) rotate(-.2deg); }
   50% { transform: translate(var(--look-x), calc(var(--look-y) - 1px)) rotate(.3deg); }
 }
+@keyframes blink {
+  0%, 14.5%, 15.55%, 36.3%, 37.35%, 65.3%, 66.35%, 84.35%, 85.4%, 100% { opacity: 0; }
+  14.76%, 15.23%, 36.56%, 37.03%, 65.56%, 66.03%, 84.61%, 85.08% { opacity: 1; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .head { transform: translate(var(--look-x), var(--look-y)); }
+  .head-frame { transform: translate(var(--look-x), var(--look-y)); }
   .scene * { animation: none; }
 }
