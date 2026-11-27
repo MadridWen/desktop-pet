@@ -7,8 +7,9 @@ const fsp = require('node:fs/promises');
 const path = require('node:path');
 
 const parts = ['head', 'body', 'keyboard-hand', 'mouse-hand'];
-const baseSize = [338, 312];
+const baseSize = [338, 388];
 const scales = [75, 100, 125, 150];
+const characterScales = [80, 90, 100, 110, 120];
 const entry = (file) => path.join(__dirname, file);
 const asset = (name) => path.join(__dirname, '..', 'assets', name + '.png');
 const nativePath = app.isPackaged
@@ -40,6 +41,7 @@ function loadConfig() {
     enabled: saved?.enabled === true,
     clickThrough: saved?.clickThrough === true,
     scale: scales.includes(saved?.scale) ? saved.scale : 100,
+    characterScale: characterScales.includes(saved?.characterScale) ? saved.characterScale : 100,
     position: Number.isInteger(position?.x) && Number.isInteger(position?.y) ? position : null
   };
 }
@@ -63,6 +65,7 @@ function state() {
     enabled: config.enabled,
     clickThrough: config.clickThrough,
     scale: config.scale,
+    characterScale: config.characterScale,
     status,
     platform: process.platform,
     custom: parts.filter((part) => fs.existsSync(partFile(part))),
@@ -233,7 +236,7 @@ function showSettings() {
   settings = new BrowserWindow({
     ...commonOptions(),
     width: 760,
-    height: 636,
+    height: 688,
     minWidth: 580,
     minHeight: 580,
     maximizable: false,
@@ -272,7 +275,7 @@ function refreshTray() {
 }
 
 function changeOptions(options, requestPermission = false) {
-  const { enabled, clickThrough, scale } = options || {};
+  const { enabled, clickThrough, scale, characterScale } = options || {};
   if (typeof enabled === 'boolean') config.enabled = enabled;
   if (typeof clickThrough === 'boolean') {
     config.clickThrough = clickThrough;
@@ -284,6 +287,7 @@ function changeOptions(options, requestPermission = false) {
     pet?.setBounds(petBounds());
     rememberPosition();
   }
+  if (characterScales.includes(characterScale)) config.characterScale = characterScale;
   config.onboarded = true;
   saveConfig();
   if (typeof enabled === 'boolean') updateListening(requestPermission && enabled);

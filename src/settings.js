@@ -48,6 +48,7 @@ async function changeImage(part) {
 for (const [part, label] of labels) {
   const row = document.createElement('div');
   row.className = 'part-row';
+  row.classList.toggle('hand-row', part.endsWith('-hand'));
   row.innerHTML = `
     <img class="thumb" alt="">
     <div class="part-info"><strong></strong><small></small></div>
@@ -90,11 +91,14 @@ function update(state) {
   get('open-permission').hidden = state.status !== 'permission';
   get('check-permission').hidden = state.status !== 'permission' && state.status !== 'unavailable';
   get('scale').value = state.scale;
+  get('character-scale').value = state.characterScale;
   get('click-through').checked = state.clickThrough;
 }
 
 get('show-pet').addEventListener('click', () => action(api.showPet));
 get('scale').addEventListener('change', (event) => action(() => api.setOptions({ scale: Number(event.target.value) })));
+get('character-scale').addEventListener('change', (event) =>
+  action(() => api.setOptions({ characterScale: Number(event.target.value) })));
 get('click-through').addEventListener('change', (event) => action(() => api.setOptions({ clickThrough: event.target.checked })));
 get('reset-position').addEventListener('click', () => action(api.resetPosition));
 get('open-permission').addEventListener('click', () => action(api.permissionSettings));

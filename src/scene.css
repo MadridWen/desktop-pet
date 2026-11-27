@@ -4,10 +4,11 @@
   top: 50%;
   left: 50%;
   width: 338px;
-  height: 312px;
+  height: 388px;
   isolation: isolate;
   user-select: none;
   pointer-events: none;
+  --character-scale: 1;
   --look-x: 0px;
   --look-y: 0px;
   --mouse-x: 0px;
@@ -15,6 +16,17 @@
   --mouse-pivot: 0deg;
   --hand-key: 0px;
 }
+.workstation {
+  position: absolute;
+  inset: 54px 0 0;
+}
+.avatar-core {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--character-scale));
+  transform-origin: 172px 263px;
+}
+.avatar-head { z-index: 5; }
 .part { position: absolute; object-fit: contain; -webkit-user-drag: none; }
 /* The four default cutouts share a pose. Their boxes keep the joints aligned. */
 .body {
@@ -25,7 +37,6 @@
   object-position: center 50%;
 }
 .head {
-  z-index: 5;
   left: 72px;
   top: 4px;
   width: 200px;
@@ -52,13 +63,14 @@
   z-index: 1;
   position: absolute;
   left: 4px;
-  top: 263px;
+  top: 254px;
   width: 328px;
-  height: 39px;
+  height: 76px;
+  box-sizing: border-box;
   border: 1px solid #94606b;
   border-bottom: 5px solid #291f2b;
   border-radius: 24px 24px 31px 31px;
-  transform: perspective(190px) rotateX(29deg);
+  transform: perspective(540px) rotateX(16deg);
   background:
     linear-gradient(95deg, #fff1d923, transparent 25% 81%, #e68b7f1c),
     linear-gradient(#49303b, #302333);
@@ -67,81 +79,139 @@
 .keyboard {
   z-index: 3;
   position: absolute;
-  left: 9px;
-  top: 272px;
-  width: 140px;
-  height: 32px;
+  left: 108px;
+  top: 273px;
+  width: 225px;
+  height: 58px;
   padding: 3px 4px;
   box-sizing: border-box;
   display: grid;
-  gap: 2px;
-  border-radius: 7px;
+  grid-template-columns: minmax(0, 15fr) minmax(0, 3fr) minmax(0, 4fr);
+  column-gap: 4px;
   border: 1px solid #e4a7a9ab;
   border-bottom: 4px solid #281b28;
+  border-radius: 7px;
   background: #4b3746;
   box-shadow: 0 3px 4px #1b1119aa;
-  transform: perspective(170px) rotateX(18deg);
+  transform: perspective(400px) rotateX(19deg) rotate(180deg);
+  --function-row: 9px;
 }
-.key-row { display: flex; gap: 2px; }
+.keyboard-bank {
+  display: grid;
+  grid-template-rows: var(--function-row) repeat(5, minmax(0, 1fr));
+  min-width: 0;
+}
+.keyboard-row {
+  display: grid;
+  grid-template-columns: repeat(60, minmax(0, 1fr));
+  min-height: 0;
+}
+.keyboard-bank .keyboard-row:first-child { padding-bottom: 1.3px; }
+.keyboard-navigation .keyboard-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.keyboard-number-pad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  margin-top: var(--function-row);
+}
 .key {
-  flex: 1;
-  border-radius: 2px;
-  background: linear-gradient(125deg, #dca4a4, #a87587);
-  border-bottom: 1px solid #684a63;
+  display: grid;
+  place-content: center;
+  margin: .46px;
+  min-width: 0;
+  min-height: 0;
+  border-bottom: 1px solid #6c485e;
+  border-radius: 1.25px;
+  color: #2f1b27;
+  background: linear-gradient(140deg, #f0c4bc, #be8b9b);
+  font: 680 5.25px/1 system-ui, sans-serif;
+  text-align: center;
+  white-space: nowrap;
   transition: background .10s;
 }
-.key:nth-child(3n+2) { background: linear-gradient(125deg, #ad8398, #865f78); }
-.key.zone-8 { flex: 5; background: #e7b4a9; }
-.key-left .zone-1, .key-middle .zone-2, .key-right .zone-4, .key-space .zone-8 {
-  background: #fff0b9;
-  box-shadow: 0 0 7px #ffc77d;
+.key-long { font-size: 3.8px; }
+.keyboard-bank .keyboard-row:first-child .key,
+.keyboard-navigation .key, .keyboard-number-pad .key {
+  background: linear-gradient(140deg, #d7a5b2, #a97890);
 }
-.keyboard-hand {
+.key.zone-8 { background: #ebbaaa; }
+.keyboard .key:is(.key-left .zone-1, .key-middle .zone-2, .key-right .zone-4, .key-space .zone-8) {
+  background: #fff0b9;
+  box-shadow: 0 0 5px #ffc77d;
+}
+.arm {
   z-index: 4;
-  left: 8px;
+  position: absolute;
   top: 178px;
+  --shoulder-x: 0px;
+  --shoulder-y: 0px;
+  --shoulder-angle: 0deg;
+  --reach: 1;
+  transition: transform .13s ease-out;
+}
+.arm .part {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1);
+}
+.keyboard-arm {
+  left: 204px;
   width: 132px;
   height: 116px;
-  object-position: right bottom;
-  transform-origin: 115px 8px;
-  transform: translateX(var(--hand-key));
-  transition: transform .15s ease-out;
+  transform-origin: 17px 8px;
+  --key-angle: 0deg;
+  transform: translate(calc(var(--shoulder-x) + var(--hand-key)), var(--shoulder-y))
+    rotate(calc(var(--shoulder-angle) + var(--key-angle))) scale(var(--reach));
 }
-.scene.key-tap .keyboard-hand {
-  transform: translateX(var(--hand-key)) rotate(-2.2deg);
-  transition-duration: .07s;
-}
+.keyboard-hand { object-position: right bottom; }
+.scene.key-tap .keyboard-arm { --key-angle: 2.2deg; transition-duration: .07s; }
 .mouse-track {
   z-index: 3;
   position: absolute;
-  left: 246px;
-  top: 269px;
-  width: 82px;
-  height: 31px;
-  border-radius: 11px;
-  transform: skewX(9deg);
-  background: #271e2a;
+  left: 17px;
+  top: 260px;
+  width: 70px;
+  height: 62px;
   border: 1px solid #6d4a61;
+  border-radius: 11px;
+  background: #271e2a;
 }
 .mouse {
   z-index: 4;
   position: absolute;
-  left: 280px;
-  top: 275px;
-  width: 41px;
-  height: 23px;
+  left: 24px;
+  top: 268px;
+  width: 42px;
+  height: 50px;
+  overflow: hidden;
   border: 1px solid #e4a099a0;
-  border-radius: 13px 13px 15px 15px;
+  border-radius: 44% 44% 38% 38% / 37% 37% 31% 31%;
   background: linear-gradient(#67505d, #3d2d41);
-  box-shadow: 0 3px 4px #130a12ad;
-  transform: translate(var(--mouse-x), var(--mouse-y)) rotate(-8deg);
+  box-shadow: inset 0 1px #f1bbac38, 0 3px 4px #130a12ad;
+  transform: translate(var(--mouse-x), var(--mouse-y));
   transition: transform .13s ease-out;
 }
 .mouse i { position: absolute; }
-.mouse-left, .mouse-right { top: 0; width: 49%; height: 48%; background: #865d70; }
-.mouse-left { left: 0; border-radius: 12px 0 0 0; }
-.mouse-right { right: 0; border-radius: 0 12px 0 0; }
-.mouse-wheel { left: calc(50% - 2px); width: 4px; height: 9px; top: 3px; border-radius: 6px; background: #f0b3a2; }
+.mouse-left, .mouse-right {
+  bottom: 0;
+  width: calc(50% - .6px);
+  height: 46%;
+  border-top: 1px solid #d89c9b80;
+  background: linear-gradient(#9c7184, #785469);
+}
+/* The scene is viewed across the desk, opposite the character. */
+.mouse-left { right: 0; }
+.mouse-right { left: 0; }
+.mouse-wheel {
+  left: calc(50% - 2px);
+  bottom: 10px;
+  width: 4px;
+  height: 9px;
+  border-radius: 6px;
+  background: repeating-linear-gradient(#f2b9a8 0 1px, #be8390 1px 2px);
+  box-shadow: 0 0 0 1px #472d43;
+}
 .scene.click-primary .mouse-left, .scene.click-secondary .mouse-right,
 .scene.click-other .mouse-wheel, .scene.scroll-up .mouse-wheel,
 .scene.scroll-down .mouse-wheel { background: #ffdf9d; box-shadow: 0 0 8px #fbb972; }
@@ -149,20 +219,20 @@
   border-color: #ffd8a4;
   box-shadow: 0 2px 6px #ffd29e91, 0 3px 4px #130a12ad;
 }
-.mouse-hand {
-  z-index: 4;
-  left: 201px;
-  top: 178px;
+.mouse-arm {
+  left: 20px;
   width: 123px;
-  height: 116px;
-  object-position: left bottom;
-  transform-origin: 20px 8px;
-  transform: translate(calc(var(--mouse-x) * .7), calc(var(--mouse-y) * .5)) rotate(var(--mouse-pivot));
-  transition: transform .13s ease-out;
+  height: 132px;
+  transform-origin: 103px 8px;
+  transform: translate(
+    calc(var(--shoulder-x) + var(--mouse-x) * .7),
+    calc(var(--shoulder-y) + var(--mouse-y) * .5)
+  ) rotate(calc(var(--shoulder-angle) + var(--mouse-pivot))) scale(var(--reach));
 }
-.scene:is(.click-primary, .click-secondary, .click-other) { --mouse-pivot: 1.8deg; }
-.scene.scroll-up { --mouse-pivot: -1.6deg; }
-.scene.scroll-down { --mouse-pivot: 1.2deg; }
+.mouse-hand { object-position: left bottom; }
+.scene:is(.click-primary, .click-secondary, .click-other) { --mouse-pivot: -1.8deg; }
+.scene.scroll-up { --mouse-pivot: 1.6deg; }
+.scene.scroll-down { --mouse-pivot: -1.2deg; }
 
 @keyframes look {
   0%, 100% { transform: translate(var(--look-x), var(--look-y)) rotate(-.2deg); }

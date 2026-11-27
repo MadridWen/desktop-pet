@@ -1,7 +1,7 @@
 {
   "name": "blossom-desk-pet",
   "productName": "Blossom Desk Pet",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "花影桌宠 · 随鼠标和键盘动作的桌面伙伴",
   "author": "MadridWen",
   "license": "MIT",
@@ -10,7 +10,7 @@
   "scripts": {
     "start": "electron .",
     "build:native": "node-gyp rebuild --directory=native",
-    "check": "node --check src/main.js && node --check src/preload.js && node --check src/scene.js && node --check src/pet.js && node --check src/settings.js",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/keyboard.js && node --check src/scene.js && node --check src/pet.js && node --check src/settings.js",
     "package": "npm run build:native && electron-builder --publish never"
   },
   "devDependencies": {

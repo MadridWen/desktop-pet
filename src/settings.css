@@ -46,7 +46,7 @@ p { color: var(--muted); }
     repeating-linear-gradient(0deg, transparent 0 30px, #eb9e9e13 30px 31px);
 }
 .preview-label { position: absolute; z-index: 1; top: 11px; left: 13px; font-size: 11px; color: #edbcb4; }
-#preview { height: 312px; margin: 9px 6px 0; }
+#preview { height: 362px; margin: 9px 6px 0; }
 .controls {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -115,6 +115,7 @@ select, .quiet {
 #parts { display: grid; gap: 6px; margin-top: 8px; }
 .part-row { display: flex; align-items: center; min-height: 48px; gap: 8px; padding: 5px 7px; background: #241922; border: 1px solid #483341; border-radius: 9px; }
 .thumb { width: 35px; height: 35px; border: 1px solid #533d4e; border-radius: 6px; object-fit: contain; background: #392a38; }
+.hand-row .thumb { transform: scaleX(-1); }
 .part-info { flex: 1; min-width: 0; }
 .part-info strong { display: block; font-size: 13px; font-weight: 600; }
 .part-info small { display: block; color: var(--muted); font-size: 11px; white-space: nowrap; }
