@@ -115,7 +115,7 @@ select, .quiet {
 #parts { display: grid; gap: 6px; margin-top: 8px; }
 .part-row { display: flex; align-items: center; min-height: 48px; gap: 8px; padding: 5px 7px; background: #241922; border: 1px solid #483341; border-radius: 9px; }
 .thumb { width: 35px; height: 35px; border: 1px solid #533d4e; border-radius: 6px; object-fit: contain; background: #392a38; }
-.hand-row .thumb { transform: scaleX(-1); }
+.mirror-thumb .thumb { transform: scaleX(-1); }
 .part-info { flex: 1; min-width: 0; }
 .part-info strong { display: block; font-size: 13px; font-weight: 600; }
 .part-info small { display: block; color: var(--muted); font-size: 11px; white-space: nowrap; }

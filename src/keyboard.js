@@ -1,101 +1,94 @@
 'use strict';
 
-const qwertyRows = [
+// Physical key IDs follow the Keyboard/Keypad USB HID usage table.
+const typingRows = [
   [
-    ['Esc', ['', 1], 'F1', 'F2', 'F3', 'F4', ['', 0.5]],
-    ['F5', 'F6', 'F7', 'F8', ['', 0.5]],
-    ['F9', 'F10', 'F11', 'F12']
+    [41, 'Esc'], [0, '', 1],
+    [58, 'F1'], [59, 'F2'], [60, 'F3'], [61, 'F4'], [0, '', .5],
+    [62, 'F5'], [63, 'F6'], [64, 'F7'], [65, 'F8'], [0, '', .5],
+    [66, 'F9'], [67, 'F10'], [68, 'F11'], [69, 'F12']
   ],
   [
-    ['`', '1', '2', '3', '4', '5'],
-    ['6', '7', '8'],
-    ['9', '0', '-', '=', ['⌫', 2]]
+    [53, '`'], [30, '1'], [31, '2'], [32, '3'], [33, '4'], [34, '5'], [35, '6'],
+    [36, '7'], [37, '8'], [38, '9'], [39, '0'], [45, '-'], [46, '='], [42, '⌫', 2]
   ],
   [
-    [['Tab', 1.5], 'Q', 'W', 'E', 'R', 'T'],
-    ['Y', 'U', 'I'],
-    ['O', 'P', '[', ']', ['\\', 1.5]]
+    [43, 'Tab', 1.5], [20, 'Q'], [26, 'W'], [8, 'E'], [21, 'R'], [23, 'T'],
+    [28, 'Y'], [24, 'U'], [12, 'I'], [18, 'O'], [19, 'P'], [47, '['], [48, ']'], [49, '\\', 1.5]
   ],
   [
-    [['Caps', 1.75], 'A', 'S', 'D', 'F', 'G'],
-    ['H', 'J', 'K'],
-    ['L', ';', "'", ['Enter', 2.25]]
+    [57, 'Caps', 1.75], [4, 'A'], [22, 'S'], [7, 'D'], [9, 'F'], [10, 'G'],
+    [11, 'H'], [13, 'J'], [14, 'K'], [15, 'L'], [51, ';'], [52, "'"], [40, 'Enter', 2.25]
   ],
   [
-    [['Shift', 2.25], 'Z', 'X', 'C', 'V'],
-    ['B', 'N', 'M'],
-    [',', '.', '/', ['Shift', 2.75]]
+    [225, 'Shift', 2.25], [29, 'Z'], [27, 'X'], [6, 'C'], [25, 'V'], [5, 'B'],
+    [17, 'N'], [16, 'M'], [54, ','], [55, '.'], [56, '/'], [229, 'Shift', 2.75]
   ],
   [
-    [['Ctrl', 1.25], ['Win', 1.25], ['Alt', 1.25]],
-    [['Space', 6.25]],
-    [['Alt', 1.25], ['Win', 1.25], ['Menu', 1.25], ['Ctrl', 1.25]]
+    [224, 'Ctrl', 1.25], [227, 'Win', 1.25], [226, 'Alt', 1.25], [44, 'Space', 6.25],
+    [230, 'Alt', 1.25], [231, 'Win', 1.25], [101, 'Menu', 1.25], [228, 'Ctrl', 1.25]
   ]
 ];
 
 const navigationRows = [
-  ['PrtSc', 'ScrLk', 'Pause'],
-  ['Ins', 'Home', 'PgUp'],
-  ['Del', 'End', 'PgDn'],
+  [[70, 'PrtSc'], [71, 'ScrLk'], [72, 'Pause']],
+  [[73, 'Ins'], [74, 'Home'], [75, 'PgUp']],
+  [[76, 'Del'], [77, 'End'], [78, 'PgDn']],
   [],
-  ['', '↑'],
-  ['←', '↓', '→']
+  [[0, ''], [82, '↑']],
+  [[80, '←'], [81, '↓'], [79, '→']]
 ];
 
 const numberPadKeys = [
-  'Num', '/', '*', '-',
-  '7', '8', '9', ['+', 1, 2],
-  '4', '5', '6',
-  '1', '2', '3', ['↵', 1, 2],
-  ['0', 2, 1], '.'
+  [83, 'Num'], [84, '/'], [85, '*'], [86, '-'],
+  [95, '7'], [96, '8'], [97, '9'], [87, '+', 1, 2],
+  [92, '4'], [93, '5'], [94, '6'],
+  [89, '1'], [90, '2'], [91, '3'], [88, '↵', 1, 2],
+  [98, '0', 2], [99, '.']
 ];
 
-function createKey(legend, zone) {
-  const key = document.createElement('span');
-  key.className = legend ? 'key zone-' + zone : 'keyboard-gap';
-  if (legend.length > 2) key.classList.add('key-long');
-  key.textContent = legend;
-  return key;
-}
-
-function appendKeyboardRows(parent, rows, fillRow) {
-  for (const entries of rows) {
-    const row = document.createElement('div');
-    row.className = 'keyboard-row';
-    fillRow(row, entries);
-    parent.append(row);
-  }
-}
-
 function createDeskKeyboard(container) {
-  const typing = document.createElement('div');
-  typing.className = 'keyboard-bank keyboard-typing';
-  appendKeyboardRows(typing, qwertyRows, (row, groups) => {
-    groups.forEach((entries, group) => {
-      for (const entry of entries) {
-        const [legend, units] = typeof entry === 'string' ? [entry, 1] : entry;
-        const key = createKey(legend, legend === 'Space' ? 8 : 1 << group);
-        key.style.gridColumn = 'span ' + units * 4;
+  const keys = new Map();
+
+  function makeKey(id, legend) {
+    const key = document.createElement('span');
+    key.className = id ? 'key' : 'keyboard-gap';
+    if (id) {
+      key.dataset.key = id;
+      key.textContent = legend;
+      if (legend.length > 2) key.classList.add('key-long');
+      keys.set(id, key);
+    }
+    return key;
+  }
+
+  for (const [kind, rows, columnsPerUnit] of [
+    ['typing', typingRows, 4],
+    ['navigation', navigationRows, 1]
+  ]) {
+    const bank = document.createElement('div');
+    bank.className = 'keyboard-bank keyboard-' + kind;
+    for (const entries of rows) {
+      const row = document.createElement('div');
+      row.className = 'keyboard-row';
+      for (const [id, legend, units = 1] of entries) {
+        const key = makeKey(id, legend);
+        key.style.gridColumn = 'span ' + units * columnsPerUnit;
         row.append(key);
       }
-    });
-  });
-
-  const navigation = document.createElement('div');
-  navigation.className = 'keyboard-bank keyboard-navigation';
-  appendKeyboardRows(navigation, navigationRows, (row, legends) => {
-    for (const legend of legends) row.append(createKey(legend, 4));
-  });
+      bank.append(row);
+    }
+    container.append(bank);
+  }
 
   const numberPad = document.createElement('div');
   numberPad.className = 'keyboard-number-pad';
-  for (const entry of numberPadKeys) {
-    const [legend, columns, rows] = typeof entry === 'string' ? [entry, 1, 1] : entry;
-    const key = createKey(legend, 4);
+  for (const [id, legend, columns = 1, rows = 1] of numberPadKeys) {
+    const key = makeKey(id, legend);
     key.style.gridColumn = 'span ' + columns;
     key.style.gridRow = 'span ' + rows;
     numberPad.append(key);
   }
-
-  container.append(typing, navigation, numberPad);
+  container.append(numberPad);
+  return keys;
 }

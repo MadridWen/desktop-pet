@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "input.h"
+#include "keycodes.h"
 
 namespace {
 std::thread worker;
@@ -14,18 +15,14 @@ std::condition_variable startup;
 bool ready = false;
 DWORD thread_id = 0;
 
-uint32_t Zone(const RAWKEYBOARD& key) {
-  if (key.Flags & (RI_KEY_E0 | RI_KEY_E1)) return input::Right;
-  const auto code = key.MakeCode;
-  if (code == 0x39) return input::Space;
-  if ((code >= 0x02 && code <= 0x06) || (code >= 0x10 && code <= 0x14) ||
-      (code >= 0x1e && code <= 0x22) || (code >= 0x2c && code <= 0x2f) ||
-      code == 0x0f || code == 0x2a || code == 0x3a) return input::Left;
-  if ((code >= 0x07 && code <= 0x09) || (code >= 0x15 && code <= 0x17) ||
-      (code >= 0x23 && code <= 0x25) || (code >= 0x30 && code <= 0x32)) {
-    return input::Middle;
-  }
-  return input::Right;
+uint8_t PressedKey(const RAWKEYBOARD& key) {
+  if ((key.Flags & RI_KEY_BREAK) || key.VKey == 0xff) return 0;
+  if (key.VKey == VK_PAUSE) return 72;
+  if (key.VKey == VK_SNAPSHOT) return 70;
+  if (key.Flags & RI_KEY_E1) return 0;
+  if (key.MakeCode) return input::WindowsKey(key.MakeCode, key.Flags & RI_KEY_E0);
+  const UINT scan = MapVirtualKeyW(key.VKey, MAPVK_VK_TO_VSC_EX);
+  return input::WindowsKey(scan & 0xff, (scan & 0xff00) == 0xe000);
 }
 
 void ReadInput(HRAWINPUT handle) {
@@ -35,9 +32,8 @@ void ReadInput(HRAWINPUT handle) {
       static_cast<UINT>(-1)) return;
 
   if (data.header.dwType == RIM_TYPEKEYBOARD) {
-    if (!(data.data.keyboard.Flags & RI_KEY_BREAK) && data.data.keyboard.VKey != 0xff) {
-      input::keys.fetch_or(Zone(data.data.keyboard));
-    }
+    const auto key = PressedKey(data.data.keyboard);
+    if (key) input::pressed_key.store(key);
   } else if (data.header.dwType == RIM_TYPEMOUSE) {
     const auto flags = data.data.mouse.usButtonFlags;
     if (flags & RI_MOUSE_LEFT_BUTTON_DOWN) input::clicks.fetch_or(input::Primary);

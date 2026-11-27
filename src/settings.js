@@ -6,12 +6,13 @@ const get = (id) => document.getElementById(id);
 const labels = [
   ['head', '头部'],
   ['body', '上半身'],
-  ['keyboard-hand', '键盘手'],
-  ['mouse-hand', '鼠标手']
+  ['keyboard-hand', '键盘左手'],
+  ['keyboard-right-hand', '键盘右手'],
+  ['mouse-hand', '鼠标右手']
 ];
 const rows = new Map();
 const statuses = {
-  off: ['已关闭', '开启后，按键分区和鼠标动作仅用于本地动画。'],
+  off: ['已关闭', '开启后，物理键位和鼠标动作仅用于本地动画。'],
   on: ['已开启', '鼠标移动、点击、滚动和按键会驱动桌宠动作。'],
   paused: ['已暂停', '桌宠隐藏或系统锁屏时，输入联动会暂停。'],
   permission: ['等待授权', '在「隐私与安全性 → 输入监控」允许花影桌宠，返回后重新检测。若系统提示退出，请重启应用。'],
@@ -48,7 +49,6 @@ async function changeImage(part) {
 for (const [part, label] of labels) {
   const row = document.createElement('div');
   row.className = 'part-row';
-  row.classList.toggle('hand-row', part.endsWith('-hand'));
   row.innerHTML = `
     <img class="thumb" alt="">
     <div class="part-info"><strong></strong><small></small></div>
@@ -72,6 +72,7 @@ function renderParts() {
     const url = 'pet-image://part/' + part + '?v=' + latest.appearanceVersion;
     if (row.image.src !== url) row.image.src = url;
     row.detail.textContent = custom ? '自定义图片' : '默认素材';
+    row.classList.toggle('mirror-thumb', part === 'mouse-hand' || (part === 'keyboard-hand' && custom));
     row.replace.disabled = importing;
     row.restore.hidden = !custom;
     row.restore.disabled = importing;

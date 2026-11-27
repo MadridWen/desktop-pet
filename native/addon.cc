@@ -3,7 +3,7 @@
 #include "input.h"
 
 namespace input {
-std::atomic<uint32_t> keys{0};
+std::atomic<uint32_t> pressed_key{0};
 std::atomic<uint32_t> clicks{0};
 std::atomic<uint32_t> scroll{0};
 std::atomic<bool> active{false};
@@ -19,7 +19,7 @@ void SetNumber(napi_env env, napi_value object, const char* key, uint32_t value)
 napi_value Read(napi_env env, napi_callback_info) {
   napi_value result;
   napi_create_object(env, &result);
-  SetNumber(env, result, "keys", input::keys.exchange(0));
+  SetNumber(env, result, "key", input::pressed_key.exchange(0));
   SetNumber(env, result, "clicks", input::clicks.exchange(0));
   SetNumber(env, result, "scroll", input::scroll.exchange(0));
   SetNumber(env, result, "active", input::active.load() ? 1 : 0);
@@ -35,7 +35,7 @@ napi_value Run(napi_env env, napi_callback_info) {
 
 void CleanUp(void*) {
   input::Stop();
-  input::keys.store(0);
+  input::pressed_key.store(0);
   input::clicks.store(0);
   input::scroll.store(0);
 }

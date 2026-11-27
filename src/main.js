@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
 
-const parts = ['head', 'body', 'keyboard-hand', 'mouse-hand'];
+const parts = ['head', 'body', 'keyboard-hand', 'keyboard-right-hand', 'mouse-hand'];
 const baseSize = [338, 388];
 const scales = [75, 100, 125, 150];
 const characterScales = [80, 90, 100, 110, 120];
@@ -98,10 +98,10 @@ function poll() {
     return;
   }
 
-  if (moved || activity.keys || activity.clicks || activity.scroll) {
+  if (moved || activity.key || activity.clicks || activity.scroll) {
     const normalize = (value, span) => Math.max(-1, Math.min(1, (2 * value / span) - 1));
     const packet = {
-      keys: activity.keys,
+      key: activity.key,
       clicks: activity.clicks,
       scroll: activity.scroll,
       moved: Boolean(moved),
@@ -137,7 +137,7 @@ function updateListening(request = false) {
       status = 'on';
       if (!timer) {
         lastPoint = screen.getCursorScreenPoint();
-        timer = setInterval(poll, 33);
+        timer = setInterval(poll, 16);
       }
     } else {
       status = 'unavailable';

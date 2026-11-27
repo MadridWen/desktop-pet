@@ -13,8 +13,6 @@
   --look-y: 0px;
   --mouse-x: 0px;
   --mouse-y: 0px;
-  --mouse-pivot: 0deg;
-  --hand-key: 0px;
 }
 .workstation {
   position: absolute;
@@ -63,9 +61,9 @@
   z-index: 1;
   position: absolute;
   left: 4px;
-  top: 254px;
+  top: 247px;
   width: 328px;
-  height: 76px;
+  height: 85px;
   box-sizing: border-box;
   border: 1px solid #94606b;
   border-bottom: 5px solid #291f2b;
@@ -79,22 +77,22 @@
 .keyboard {
   z-index: 3;
   position: absolute;
-  left: 108px;
-  top: 273px;
-  width: 225px;
-  height: 58px;
-  padding: 3px 4px;
+  left: 79px;
+  top: 252px;
+  width: 251px;
+  height: 79px;
+  padding: 4px;
   box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 15fr) minmax(0, 3fr) minmax(0, 4fr);
-  column-gap: 4px;
-  border: 1px solid #e4a7a9ab;
-  border-bottom: 4px solid #281b28;
-  border-radius: 7px;
-  background: #4b3746;
-  box-shadow: 0 3px 4px #1b1119aa;
-  transform: perspective(400px) rotateX(19deg) rotate(180deg);
-  --function-row: 9px;
+  column-gap: 5px;
+  border: 1px solid #a67582;
+  border-top: 3px solid #211822;
+  border-radius: 6px;
+  background: linear-gradient(#49333f, #332530);
+  box-shadow: 0 -3px 4px #1b1119bc, inset 0 0 0 1px #211823;
+  transform: perspective(460px) rotateX(18deg) rotate(180deg);
+  --function-row: 12px;
 }
 .keyboard-bank {
   display: grid;
@@ -106,7 +104,7 @@
   grid-template-columns: repeat(60, minmax(0, 1fr));
   min-height: 0;
 }
-.keyboard-bank .keyboard-row:first-child { padding-bottom: 1.3px; }
+.keyboard-bank .keyboard-row:first-child { padding-bottom: 2px; }
 .keyboard-navigation .keyboard-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .keyboard-number-pad {
   display: grid;
@@ -117,55 +115,52 @@
 .key {
   display: grid;
   place-content: center;
-  margin: .46px;
+  margin: .63px;
   min-width: 0;
   min-height: 0;
-  border-bottom: 1px solid #6c485e;
-  border-radius: 1.25px;
-  color: #2f1b27;
-  background: linear-gradient(140deg, #f0c4bc, #be8b9b);
-  font: 680 5.25px/1 system-ui, sans-serif;
+  border-bottom: 1px solid #8f6574;
+  border-radius: 1.7px;
+  box-shadow: inset 0 1px #fff3e755;
+  color: #392632;
+  background: linear-gradient(#f4d6c8, #d6abac);
+  font: 680 6px/1 system-ui, sans-serif;
   text-align: center;
   white-space: nowrap;
-  transition: background .10s;
 }
-.key-long { font-size: 3.8px; }
+.key-long { font-size: 4.1px; }
 .keyboard-bank .keyboard-row:first-child .key,
 .keyboard-navigation .key, .keyboard-number-pad .key {
-  background: linear-gradient(140deg, #d7a5b2, #a97890);
+  background: linear-gradient(#cc9eac, #ad7e92);
 }
-.key.zone-8 { background: #ebbaaa; }
-.keyboard .key:is(.key-left .zone-1, .key-middle .zone-2, .key-right .zone-4, .key-space .zone-8) {
-  background: #fff0b9;
-  box-shadow: 0 0 5px #ffc77d;
+.key[data-key="44"] { background: #e8bdac; }
+.key[data-key="9"], .key[data-key="13"] { box-shadow: inset 0 -2px #704b6275; }
+.scene .keyboard .key.is-pressed {
+  background: #fff0a6;
+  border-color: #f4ba78;
+  box-shadow: 0 0 5px #ffbc70, inset 0 1px #ffface;
+  transform: translateY(.65px);
 }
 .arm {
   z-index: 4;
   position: absolute;
   top: 178px;
-  --shoulder-x: 0px;
-  --shoulder-y: 0px;
-  --shoulder-angle: 0deg;
-  --reach: 1;
-  transition: transform .13s ease-out;
 }
-.arm .part {
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform: scaleX(-1);
-}
+.arm .part { inset: 0; width: 100%; height: 100%; }
 .keyboard-arm {
-  left: 204px;
-  width: 132px;
-  height: 116px;
-  transform-origin: 17px 8px;
-  --key-angle: 0deg;
-  transform: translate(calc(var(--shoulder-x) + var(--hand-key)), var(--shoulder-y))
-    rotate(calc(var(--shoulder-angle) + var(--key-angle))) scale(var(--reach));
+  left: 199px;
+  width: 70px;
+  height: 126px;
+  transform-origin: 22px 8px;
+  transition: transform .08s ease-out;
 }
-.keyboard-hand { object-position: right bottom; }
-.scene.key-tap .keyboard-arm { --key-angle: 2.2deg; transition-duration: .07s; }
+.keyboard-right-arm {
+  left: 104px;
+  width: 94px;
+  height: 126px;
+  transform-origin: 19px 8px;
+}
+.keyboard-hand.custom { transform: scaleX(-1); object-position: right bottom; }
+.pose-inactive { visibility: hidden; }
 .mouse-track {
   z-index: 3;
   position: absolute;
@@ -224,15 +219,11 @@
   width: 123px;
   height: 132px;
   transform-origin: 103px 8px;
-  transform: translate(
-    calc(var(--shoulder-x) + var(--mouse-x) * .7),
-    calc(var(--shoulder-y) + var(--mouse-y) * .5)
-  ) rotate(calc(var(--shoulder-angle) + var(--mouse-pivot))) scale(var(--reach));
 }
-.mouse-hand { object-position: left bottom; }
-.scene:is(.click-primary, .click-secondary, .click-other) { --mouse-pivot: -1.8deg; }
-.scene.scroll-up { --mouse-pivot: 1.6deg; }
-.scene.scroll-down { --mouse-pivot: -1.2deg; }
+.mouse-hand { transform: scaleX(-1); object-position: left bottom; }
+.scene:is(.click-primary, .click-secondary, .click-other) .mouse-hand {
+  transform: scaleX(-1) translateY(1.3px);
+}
 
 @keyframes look {
   0%, 100% { transform: translate(var(--look-x), var(--look-y)) rotate(-.2deg); }
