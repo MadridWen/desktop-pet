@@ -1,0 +1,124 @@
+name: Build and publish installers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-pet-release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.check.outputs.tag }}
+      pending: ${{ steps.check.outputs.pending }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(node -p 'require("./package.json").version')"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" --json isDraft --jq '.isDraft' > .release-state; then
+            echo "pending=$(cat .release-state)" >> "$GITHUB_OUTPUT"
+          else
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  package:
+    needs: version
+    if: needs.version.outputs.pending == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            target: win
+            arch: x64
+          - runner: macos-15
+            target: mac
+            arch: arm64
+          - runner: macos-15-intel
+            target: mac
+            arch: x64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify runner architecture
+        run: node -e 'if (process.arch !== "${{ matrix.arch }}") process.exit(1)'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm run build:native
+      - name: Verify the native module loads
+        run: |
+          node -e 'const input = require("./native/build/Release/input.node"); if (input.takeActivity().active !== 0) process.exit(1); input.stop();'
+      - name: Build the installer
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          npm exec -- electron-builder --${{ matrix.target }} --${{ matrix.arch }} --publish never
+      - uses: actions/upload-artifact@v6
+        with:
+          name: installer-${{ matrix.target }}-${{ matrix.arch }}
+          path: |
+            dist/BlossomDeskPet-*.exe
+            dist/BlossomDeskPet-*.dmg
+          if-no-files-found: error
+
+  release:
+    needs: [version, package]
+    if: needs.version.outputs.pending == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: installer-*
+          path: installers
+          merge-multiple: true
+      - name: Upload installers to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          cd installers
+          shopt -s nullglob
+          windows=( *-x64.exe )
+          apple=( *-arm64.dmg )
+          intel=( *-x64.dmg )
+          [[ ${#windows[@]} = 1 && ${#apple[@]} = 1 && ${#intel[@]} = 1 ]]
+          files=( "${windows[0]}" "${apple[0]}" "${intel[0]}" )
+          sha256sum "${files[@]}" > SHA256SUMS.txt
+
+          cat > /tmp/blossom-release-notes.md <<'NOTES'
+          - Windows 10 / 11（x64）：下载 `.exe` 安装。
+          - macOS 13 或更新版本：Apple 芯片选 `arm64.dmg`，Intel 芯片选 `x64.dmg`。打开磁盘映像并将应用拖入「应用程序」。
+          - 第一次打开后，在设置中开启「输入联动」。macOS 还需要允许「输入监控」。
+          - Windows 安装程序没有商业代码签名。macOS 使用临时签名，未经 Apple 公证，首次打开时可能需要在「隐私与安全性」允许。
+          NOTES
+
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "花影桌宠 $TAG" --notes-file /tmp/blossom-release-notes.md
+          fi
+          gh release upload "$TAG" "${files[@]}" SHA256SUMS.txt --clobber
+          gh release edit "$TAG" --draft=false --latest

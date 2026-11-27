@@ -1,0 +1,54 @@
+{
+  "name": "blossom-desk-pet",
+  "productName": "Blossom Desk Pet",
+  "version": "1.0.0",
+  "description": "花影桌宠 · 随鼠标和键盘动作的桌面伙伴",
+  "author": "MadridWen",
+  "license": "MIT",
+  "main": "src/main.js",
+  "gypfile": false,
+  "scripts": {
+    "start": "electron .",
+    "build:native": "node-gyp rebuild --directory=native",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/scene.js && node --check src/pet.js && node --check src/settings.js",
+    "package": "npm run build:native && electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.5.0",
+    "electron-builder": "26.18.0",
+    "node-gyp": "12.4.0"
+  },
+  "build": {
+    "appId": "com.madridwen.blossomdeskpet",
+    "artifactName": "BlossomDeskPet-${version}-${os}-${arch}.${ext}",
+    "npmRebuild": false,
+    "files": [
+      "src/**/*",
+      "assets/*.png",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "native/build/Release/input.node",
+        "to": "input.node"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png",
+      "signAndEditExecutable": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.png",
+      "category": "public.app-category.utilities",
+      "minimumSystemVersion": "13.0",
+      "identity": "-",
+      "hardenedRuntime": false
+    }
+  }
+}

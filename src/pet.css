@@ -1,0 +1,28 @@
+html, body, #stage { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { user-select: none; }
+#stage { pointer-events: none; }
+.grip {
+  position: absolute;
+  inset: 6% 19% 28%;
+  app-region: drag;
+  -webkit-app-region: drag;
+}
+#settings {
+  position: absolute;
+  right: 5%;
+  bottom: 2.5%;
+  width: 10.1%;
+  aspect-ratio: 1;
+  border: 1px solid #e6a39470;
+  border-radius: 50%;
+  background: #2e2028;
+  color: #ffd5c0;
+  cursor: pointer;
+  font-size: clamp(13px, 6.1vw, 31px);
+  line-height: 1;
+  padding: 0;
+  opacity: .25;
+  transition: opacity .18s;
+}
+body:hover #settings, #settings:focus-visible { opacity: 1; }
+#settings:hover { background: #542e3a; }

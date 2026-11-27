@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' pet-image:">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>花影桌宠设置</title>
+  <link rel="stylesheet" href="scene.css">
+  <link rel="stylesheet" href="settings.css">
+  <script defer src="scene.js"></script>
+  <script defer src="settings.js"></script>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <div>
+        <h1>花影<span>桌宠</span></h1>
+        <p>跟随你的鼠标和键盘，在桌面上一起工作。</p>
+      </div>
+      <button id="show-pet" type="button" class="quiet">显示桌宠 ↗</button>
+    </header>
+
+    <div class="layout">
+      <section class="visual" aria-label="桌宠实时预览">
+        <div class="monitor">
+          <span class="preview-label">实时预览</span>
+          <div id="preview"></div>
+        </div>
+        <section class="controls" aria-label="桌宠位置和大小">
+          <label for="scale">桌宠大小</label>
+          <select id="scale">
+            <option value="75">75%</option>
+            <option value="100">100%</option>
+            <option value="125">125%</option>
+            <option value="150">150%</option>
+          </select>
+          <label for="click-through">鼠标穿透</label>
+          <input type="checkbox" id="click-through" class="switch">
+          <button id="reset-position" type="button" class="quiet">重置桌宠位置</button>
+        </section>
+      </section>
+
+      <div class="configuration">
+        <section class="connection">
+          <div class="connection-title">
+            <h2>输入联动</h2>
+            <span id="status" role="status">正在读取…</span>
+          </div>
+          <p id="input-detail">按键分区和鼠标动作仅用于本地动画。</p>
+          <div class="connection-actions">
+            <button id="toggle" type="button" class="primary" disabled>开启输入联动</button>
+            <button id="open-permission" type="button" class="quiet" hidden>打开系统设置</button>
+            <button id="check-permission" type="button" class="quiet" hidden>重新检测</button>
+          </div>
+        </section>
+
+        <section class="appearance">
+          <h2>外观</h2>
+          <p>可独立替换每个部件。推荐使用透明 PNG。</p>
+          <div id="parts"></div>
+          <p id="feedback" role="status"></p>
+        </section>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
