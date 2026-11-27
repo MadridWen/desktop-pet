@@ -111,6 +111,7 @@ jobs:
           sha256sum "${files[@]}" > SHA256SUMS.txt
 
           cat > /tmp/blossom-release-notes.md <<'NOTES'
+          - 默认角色采用正面坐姿，画面左侧的手敲键盘，右侧的手操作鼠标。
           - Windows 10 / 11（x64）：下载 `.exe` 安装。
           - macOS 13 或更新版本：Apple 芯片选 `arm64.dmg`，Intel 芯片选 `x64.dmg`。打开磁盘映像并将应用拖入「应用程序」。
           - 第一次打开后，在设置中开启「输入联动」。macOS 还需要允许「输入监控」。

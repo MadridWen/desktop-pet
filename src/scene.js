@@ -48,10 +48,10 @@ function createScene(container) {
   }
 
   function point(mouseX, mouseY) {
-    shift('look-x', mouseX * 5);
-    shift('look-y', mouseY * 3);
-    shift('mouse-x', mouseX * 10);
-    shift('mouse-y', mouseY * 6);
+    shift('look-x', mouseX * 1.8);
+    shift('look-y', mouseY * 1.2);
+    shift('mouse-x', mouseX * 4.5);
+    shift('mouse-y', mouseY * 2.5);
   }
 
   function animate({ keys, clicks, scroll, moved, x, y }) {
@@ -63,7 +63,7 @@ function createScene(container) {
       if (clicks & (1 << index)) pulse(name, 145);
     });
     if (keys) {
-      shift('hand-key', keys & 4 ? 13 : keys & 2 ? 6 : keys & 1 ? -5 : 3);
+      shift('hand-key', keys & 4 ? 2.5 : keys & 2 ? 1 : keys & 1 ? -1.5 : 0);
       pulse('key-tap', 145);
       clearTimeout(timers.get('hand-key'));
       timers.set('hand-key', setTimeout(() => {
@@ -100,7 +100,9 @@ function createScene(container) {
       if (state.appearanceVersion === version) return;
       version = state.appearanceVersion;
       for (const part of scene.querySelectorAll('[data-part]')) {
-        part.src = 'pet-image://part/' + part.dataset.part + '?v=' + version;
+        const name = part.dataset.part;
+        part.classList.toggle('custom', state.custom.includes(name));
+        part.src = 'pet-image://part/' + name + '?v=' + version;
       }
     }
   };

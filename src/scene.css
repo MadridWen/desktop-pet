@@ -12,37 +12,38 @@
   --look-y: 0px;
   --mouse-x: 0px;
   --mouse-y: 0px;
-  --mouse-shift: 0px;
+  --mouse-pivot: 0deg;
   --hand-key: 0px;
 }
 .part { position: absolute; object-fit: contain; -webkit-user-drag: none; }
+/* The four default cutouts share a pose. Their boxes keep the joints aligned. */
 .body {
-  left: 70px;
-  top: 142px;
-  width: 186px;
-  height: 140px;
-  object-position: center top;
-  filter: drop-shadow(0 3px 6px #170a1480);
-  transform-origin: 52% 84%;
-  animation: breathe 4.6s ease-in-out infinite;
+  left: 104px;
+  top: 155px;
+  width: 136px;
+  height: 138px;
+  object-position: center 50%;
 }
 .head {
-  z-index: 2;
-  left: 48px;
-  top: 6px;
-  width: 228px;
-  height: 219px;
-  object-position: center bottom;
-  filter: drop-shadow(0 4px 4px #130a1270);
-  transform-origin: 54% 86%;
+  z-index: 5;
+  left: 72px;
+  top: 4px;
+  width: 200px;
+  height: 224px;
+  object-position: center 79%;
+  transform-origin: 50% 74%;
   animation: look 4.6s ease-in-out infinite;
+}
+.head.custom {
+  height: 172px;
+  object-position: center bottom;
 }
 .desk-shadow {
   position: absolute;
-  left: 14px;
-  bottom: 2px;
-  width: 310px;
-  height: 50px;
+  left: 6px;
+  bottom: 1px;
+  width: 326px;
+  height: 42px;
   border-radius: 50%;
   background: #10081386;
   filter: blur(13px);
@@ -50,10 +51,10 @@
 .desk {
   z-index: 1;
   position: absolute;
-  left: 17px;
-  top: 239px;
-  width: 304px;
-  height: 54px;
+  left: 4px;
+  top: 263px;
+  width: 328px;
+  height: 39px;
   border: 1px solid #94606b;
   border-bottom: 5px solid #291f2b;
   border-radius: 24px 24px 31px 31px;
@@ -66,11 +67,11 @@
 .keyboard {
   z-index: 3;
   position: absolute;
-  left: 31px;
-  top: 248px;
-  width: 187px;
-  height: 42px;
-  padding: 4px 5px;
+  left: 9px;
+  top: 272px;
+  width: 140px;
+  height: 32px;
+  padding: 3px 4px;
   box-sizing: border-box;
   display: grid;
   gap: 2px;
@@ -79,7 +80,7 @@
   border-bottom: 4px solid #281b28;
   background: #4b3746;
   box-shadow: 0 3px 4px #1b1119aa;
-  transform: perspective(170px) rotateX(24deg);
+  transform: perspective(170px) rotateX(18deg);
 }
 .key-row { display: flex; gap: 2px; }
 .key {
@@ -97,41 +98,43 @@
 }
 .keyboard-hand {
   z-index: 4;
-  left: 51px;
-  top: 161px;
-  width: 147px;
-  height: 110px;
-  object-position: left center;
-  transform-origin: 12% 17%;
-  transform: translateX(var(--hand-key)) rotate(2deg);
+  left: 8px;
+  top: 178px;
+  width: 132px;
+  height: 116px;
+  object-position: right bottom;
+  transform-origin: 115px 8px;
+  transform: translateX(var(--hand-key));
   transition: transform .15s ease-out;
-  filter: drop-shadow(0 3px 2px #21131aaa);
 }
-.scene.key-tap .keyboard-hand { transform: translate(var(--hand-key), 4px) rotate(5deg); transition-duration: .055s; }
+.scene.key-tap .keyboard-hand {
+  transform: translateX(var(--hand-key)) rotate(-2.2deg);
+  transition-duration: .07s;
+}
 .mouse-track {
   z-index: 3;
   position: absolute;
-  left: 225px;
-  top: 251px;
-  width: 80px;
-  height: 34px;
+  left: 246px;
+  top: 269px;
+  width: 82px;
+  height: 31px;
   border-radius: 11px;
-  transform: skewX(10deg);
+  transform: skewX(9deg);
   background: #271e2a;
   border: 1px solid #6d4a61;
 }
 .mouse {
   z-index: 4;
   position: absolute;
-  left: 248px;
-  top: 248px;
-  width: 36px;
-  height: 31px;
+  left: 280px;
+  top: 275px;
+  width: 41px;
+  height: 23px;
   border: 1px solid #e4a099a0;
   border-radius: 13px 13px 15px 15px;
   background: linear-gradient(#67505d, #3d2d41);
   box-shadow: 0 3px 4px #130a12ad;
-  transform: translate(var(--mouse-x), var(--mouse-y)) rotate(-15deg);
+  transform: translate(var(--mouse-x), var(--mouse-y)) rotate(-8deg);
   transition: transform .13s ease-out;
 }
 .mouse i { position: absolute; }
@@ -142,29 +145,28 @@
 .scene.click-primary .mouse-left, .scene.click-secondary .mouse-right,
 .scene.click-other .mouse-wheel, .scene.scroll-up .mouse-wheel,
 .scene.scroll-down .mouse-wheel { background: #ffdf9d; box-shadow: 0 0 8px #fbb972; }
+.scene:is(.click-primary, .click-secondary, .click-other, .scroll-up, .scroll-down) .mouse {
+  border-color: #ffd8a4;
+  box-shadow: 0 2px 6px #ffd29e91, 0 3px 4px #130a12ad;
+}
 .mouse-hand {
-  z-index: 5;
-  left: 153px;
-  top: 167px;
-  width: 138px;
-  height: 105px;
-  object-position: left center;
-  transform-origin: 14% 18%;
-  transform: translate(calc(var(--mouse-x) * .75), calc(var(--mouse-y) + var(--mouse-shift))) rotate(0deg);
+  z-index: 4;
+  left: 201px;
+  top: 178px;
+  width: 123px;
+  height: 116px;
+  object-position: left bottom;
+  transform-origin: 20px 8px;
+  transform: translate(calc(var(--mouse-x) * .7), calc(var(--mouse-y) * .5)) rotate(var(--mouse-pivot));
   transition: transform .13s ease-out;
-  filter: drop-shadow(0 3px 2px #21131aaa);
 }
-.scene:is(.click-primary, .click-secondary, .click-other) { --mouse-shift: 3px; }
-.scene.scroll-up { --mouse-shift: -3px; }
-.scene.scroll-down { --mouse-shift: 2px; }
+.scene:is(.click-primary, .click-secondary, .click-other) { --mouse-pivot: 1.8deg; }
+.scene.scroll-up { --mouse-pivot: -1.6deg; }
+.scene.scroll-down { --mouse-pivot: 1.2deg; }
 
-@keyframes breathe {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(1.022); }
-}
 @keyframes look {
-  0%, 100% { transform: translate(var(--look-x), var(--look-y)) rotate(-.4deg); }
-  50% { transform: translate(var(--look-x), calc(var(--look-y) - 2px)) rotate(.45deg); }
+  0%, 100% { transform: translate(var(--look-x), var(--look-y)) rotate(-.2deg); }
+  50% { transform: translate(var(--look-x), calc(var(--look-y) - 1px)) rotate(.3deg); }
 }
 @media (prefers-reduced-motion: reduce) {
   .head { transform: translate(var(--look-x), var(--look-y)); }

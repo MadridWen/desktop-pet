@@ -9,8 +9,8 @@ body { user-select: none; }
 }
 #settings {
   position: absolute;
-  right: 5%;
-  bottom: 2.5%;
+  right: 4%;
+  top: 6%;
   width: 10.1%;
   aspect-ratio: 1;
   border: 1px solid #e6a39470;
