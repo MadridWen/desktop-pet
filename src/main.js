@@ -190,11 +190,22 @@ function lockNavigation(window) {
   window.webContents.on('will-navigate', (event) => event.preventDefault());
 }
 
-function updateWindowOrder() {
-  if (!pet || pet.isDestroyed() || quitting) return;
-  const settingsOpen = settings?.isVisible();
-  pet.setAlwaysOnTop(!settingsOpen, 'floating');
-  if (settingsOpen) settings.moveTop();
+function updateSettingsLayer() {
+  if (!settings || settings.isDestroyed() || quitting) return;
+  const settingsVisible = settings.isVisible() && !settings.isMinimized();
+  let needsFloating = settingsVisible && choosing;
+  if (settingsVisible && pet && !pet.isDestroyed() && pet.isVisible()) {
+    const a = settings.getBounds();
+    const b = pet.getBounds();
+    const overlaps = a.x < b.x + b.width && b.x < a.x + a.width &&
+      a.y < b.y + b.height && b.y < a.y + a.height;
+    needsFloating ||= overlaps;
+  }
+
+  if (settings.isAlwaysOnTop() === needsFloating) return;
+  // Keep the pet floating. Raise the settings window separately when it needs to be reachable.
+  settings.setAlwaysOnTop(needsFloating, 'floating', 1);
+  if (needsFloating) settings.moveTop();
 }
 
 function createPet() {
@@ -215,23 +226,26 @@ function createPet() {
   lockNavigation(pet);
   pet.setAlwaysOnTop(true, 'floating');
   if (process.platform === 'darwin') {
-    pet.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    pet.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
   }
   pet.setIgnoreMouseEvents(config.clickThrough);
   pet.on('move', () => {
     clearTimeout(moveTimer);
     moveTimer = setTimeout(rememberPosition, 250);
+    updateSettingsLayer();
   });
+  pet.on('resize', updateSettingsLayer);
   pet.on('close', (event) => {
     if (quitting) return;
     event.preventDefault();
     pet.hide();
   });
-  pet.on('hide', () => updateListening());
-  pet.on('show', () => {
-    updateWindowOrder();
-    updateListening();
-  });
+  for (const event of ['hide', 'show']) {
+    pet.on(event, () => {
+      updateSettingsLayer();
+      updateListening();
+    });
+  }
   pet.once('ready-to-show', () => {
     pet.showInactive();
     if (!config.onboarded) showSettings();
@@ -257,14 +271,14 @@ function showSettings() {
   });
   lockNavigation(settings);
   settings.once('ready-to-show', () => settings?.show());
-  settings.on('show', updateWindowOrder);
-  settings.on('hide', updateWindowOrder);
+  for (const event of ['show', 'hide', 'move', 'resize', 'minimize', 'restore']) {
+    settings.on(event, updateSettingsLayer);
+  }
   settings.on('focus', () => {
     if (status === 'permission') updateListening();
   });
   settings.on('closed', () => {
     settings = null;
-    updateWindowOrder();
     if (!config.onboarded) {
       config.onboarded = true;
       saveConfig();
@@ -317,6 +331,7 @@ async function selectImage(part) {
   if (choosing) return { error: '已有图片选择窗口打开。' };
   choosing = true;
   try {
+    updateSettingsLayer();
     const result = await dialog.showOpenDialog(settings, {
       title: '选择桌宠部件图片',
       properties: ['openFile'],
@@ -349,6 +364,7 @@ async function selectImage(part) {
     return { error: '图片保存失败，请重试。' };
   } finally {
     choosing = false;
+    updateSettingsLayer();
   }
 }
 
@@ -361,6 +377,7 @@ function route(channel, windows, callback) {
 }
 
 function startApp() {
+  if (process.platform === 'darwin') app.setActivationPolicy('accessory');
   dataDir = path.join(app.getPath('userData'), 'appearance');
   fs.mkdirSync(dataDir, { recursive: true });
   config = loadConfig();
@@ -432,7 +449,6 @@ function startApp() {
   screen.on('display-metrics-changed', (_event, _display, metrics) => {
     if (metrics.includes('workArea') || metrics.includes('bounds')) pet?.setBounds(petBounds());
   });
-  if (process.platform === 'darwin') app.dock.hide();
 }
 
 if (!app.requestSingleInstanceLock()) {
