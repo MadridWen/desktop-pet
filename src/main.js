@@ -93,7 +93,7 @@ function poll() {
 
   if (!activity.active) {
     stopListening();
-    status = process.platform === 'darwin' && !input.hasPermission() ? 'permission' : 'unavailable';
+    status = process.platform === 'darwin' && !input.hasPermission() ? 'permission' : 'listener-error';
     syncWindows();
     return;
   }
@@ -126,8 +126,10 @@ function updateListening(request = false) {
   if (!config.enabled || locked || !pet?.isVisible()) {
     stopListening();
     status = config.enabled ? 'paused' : 'off';
-  } else if (!input || !['win32', 'darwin'].includes(process.platform)) {
+  } else if (!['win32', 'darwin'].includes(process.platform)) {
     status = 'unavailable';
+  } else if (!input) {
+    status = 'module-error';
   } else {
     if (request && !input.hasPermission()) input.requestPermission();
     if (!input.hasPermission()) {
@@ -140,7 +142,7 @@ function updateListening(request = false) {
         timer = setInterval(poll, 16);
       }
     } else {
-      status = 'unavailable';
+      status = 'listener-error';
     }
   }
   syncWindows();
@@ -188,6 +190,13 @@ function lockNavigation(window) {
   window.webContents.on('will-navigate', (event) => event.preventDefault());
 }
 
+function updateWindowOrder() {
+  if (!pet || pet.isDestroyed() || quitting) return;
+  const settingsOpen = settings?.isVisible();
+  pet.setAlwaysOnTop(!settingsOpen, 'floating');
+  if (settingsOpen) settings.moveTop();
+}
+
 function createPet() {
   pet = new BrowserWindow({
     ...commonOptions(),
@@ -219,7 +228,10 @@ function createPet() {
     pet.hide();
   });
   pet.on('hide', () => updateListening());
-  pet.on('show', () => updateListening());
+  pet.on('show', () => {
+    updateWindowOrder();
+    updateListening();
+  });
   pet.once('ready-to-show', () => {
     pet.showInactive();
     if (!config.onboarded) showSettings();
@@ -245,8 +257,14 @@ function showSettings() {
   });
   lockNavigation(settings);
   settings.once('ready-to-show', () => settings?.show());
+  settings.on('show', updateWindowOrder);
+  settings.on('hide', updateWindowOrder);
+  settings.on('focus', () => {
+    if (status === 'permission') updateListening();
+  });
   settings.on('closed', () => {
     settings = null;
+    updateWindowOrder();
     if (!config.onboarded) {
       config.onboarded = true;
       saveConfig();
@@ -265,7 +283,7 @@ function refreshTray() {
     } },
     { label: config.enabled ? '暂停输入联动' : '开启输入联动', click: () => {
       changeOptions({ enabled: !config.enabled }, true);
-      if (status === 'permission' || status === 'unavailable') showSettings();
+      if (config.enabled && status !== 'on') showSettings();
     } },
     { label: '鼠标穿透', type: 'checkbox', checked: config.clickThrough, click: (item) =>
       changeOptions({ clickThrough: item.checked }) },

@@ -74,6 +74,17 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
           npm exec -- electron-builder --${{ matrix.target }} --${{ matrix.arch }} --publish never
+      - name: Verify the signed macOS input module loads in Electron
+        if: matrix.target == 'mac'
+        run: |
+          bundle=$(find dist -type d -name 'Blossom Desk Pet.app' -print -quit)
+          test -n "$bundle"
+          codesign --verify --deep --strict "$bundle"
+          ELECTRON_RUN_AS_NODE=1 "$bundle/Contents/MacOS/Blossom Desk Pet" -e '
+            const input = require(process.argv[1]);
+            if (input.takeActivity().active !== 0) process.exit(1);
+            input.stop();
+          ' "$PWD/$bundle/Contents/Resources/input.node"
       - uses: actions/upload-artifact@v6
         with:
           name: installer-${{ matrix.target }}-${{ matrix.arch }}
@@ -111,9 +122,8 @@ jobs:
           sha256sum "${files[@]}" > SHA256SUMS.txt
 
           cat > /tmp/blossom-release-notes.md <<'NOTES'
-          - 敲键时手指移到对应键帽，覆盖主键区、功能键、方向键和数字小键盘。
-          - 调整鼠标和鼠标垫的位置，在鼠标垫与键盘之间留出间隙。
-          - 默认角色增加自然眨眼。
+          - 修复素材缩略图刷新时让设置页卡在加载、输入联动按钮无法开启以及部分换装按钮失效的问题。
+          - 设置窗口显示在桌宠上方，并分别提示 Mac 输入监控授权、监听启动失败和组件加载失败。
           - Windows 10 / 11（x64）：下载 `.exe` 安装。
           - macOS 13 或更新版本：Apple 芯片选 `arm64.dmg`，Intel 芯片选 `x64.dmg`。打开磁盘映像并将应用拖入「应用程序」。
           - 第一次打开后，在设置中开启「输入联动」。macOS 还需要允许「输入监控」。

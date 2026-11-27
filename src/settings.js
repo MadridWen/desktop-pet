@@ -15,8 +15,10 @@ const statuses = {
   off: ['已关闭', '开启后，物理键位和鼠标动作仅用于本地动画。'],
   on: ['已开启', '鼠标移动、点击、滚动和按键会驱动桌宠动作。'],
   paused: ['已暂停', '桌宠隐藏或系统锁屏时，输入联动会暂停。'],
-  permission: ['等待授权', '在「隐私与安全性 → 输入监控」允许花影桌宠，返回后重新检测。若系统提示退出，请重启应用。'],
-  unavailable: ['联动不可用', '输入联动需要 Windows 或 macOS。可关闭后重试。']
+  permission: ['等待授权', '在「系统设置 → 隐私与安全性 → 输入监控」启用 Blossom Desk Pet，退出并重开应用后重新检测。'],
+  'module-error': ['组件加载失败', '请检查安装包是否与电脑架构匹配。Mac 版请拖入「应用程序」后打开。'],
+  'listener-error': ['监听启动失败', '请点「重新检测」。Mac 用户可以先检查系统的输入监控授权。'],
+  unavailable: ['联动不可用', '输入联动需要 Windows 或 macOS。']
 };
 
 let latest;
@@ -72,7 +74,7 @@ function renderParts() {
     const url = 'pet-image://part/' + part + '?v=' + latest.appearanceVersion;
     if (row.image.src !== url) row.image.src = url;
     row.detail.textContent = custom ? '自定义图片' : '默认素材';
-    row.classList.toggle('mirror-thumb', part === 'mouse-hand' || (part === 'keyboard-hand' && custom));
+    row.image.classList.toggle('mirror-thumb', part === 'mouse-hand' || (part === 'keyboard-hand' && custom));
     row.replace.disabled = importing;
     row.restore.hidden = !custom;
     row.restore.disabled = importing;
@@ -89,8 +91,9 @@ function update(state) {
   get('input-detail').textContent = detail;
   get('toggle').textContent = state.enabled ? '暂停输入联动' : '开启输入联动';
   get('toggle').disabled = state.platform !== 'win32' && state.platform !== 'darwin';
-  get('open-permission').hidden = state.status !== 'permission';
-  get('check-permission').hidden = state.status !== 'permission' && state.status !== 'unavailable';
+  const retry = state.status === 'permission' || state.status === 'listener-error';
+  get('open-permission').hidden = state.platform !== 'darwin' || !retry;
+  get('check-permission').hidden = !retry;
   get('scale').value = state.scale;
   get('character-scale').value = state.characterScale;
   get('click-through').checked = state.clickThrough;
@@ -108,4 +111,8 @@ get('toggle').addEventListener('click', () => action(() => api.setOptions({ enab
 api.onState(update);
 api.onActivity(animate);
 api.onReset(reset);
-api.getState().then(update);
+api.getState().then(update).catch(error => {
+  console.error('Could not read settings:', error);
+  get('status').textContent = '设置读取失败';
+  get('input-detail').textContent = '无法读取应用状态，请退出桌宠后重新打开。';
+});
